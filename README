@@ -1,0 +1,15 @@
+Assignment 1 – Computer Graphics
+Author: D.Y.
+OS tested: Windows 10 + MSYS2 (MinGW64)
+
+Programs:
+1. red_triangle – draws a red triangle
+2. blue_square – draws a blue square
+3. shapes – draws circle, ellipse, triangle, and square
+4. creative – extra picture with custom shapes/colors
+
+Usage:
+1. Open MSYS2 MinGW64 terminal.
+2. Navigate to this folder: cd ~/dy123_a1
+3. Run: make
+4. Execute: ./red_triangle.exe , ./blue_square.exe , ./shapes.exe , ./creative.exe

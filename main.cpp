@@ -29,7 +29,7 @@ void resetGame() {
 }
 
 int checkWinner() {
-    
+    // rows, cols, diagonals
     const int lines[8][3] = {
         {0,1,2},{3,4,5},{6,7,8},
         {0,3,6},{1,4,7},{2,5,8},
@@ -41,9 +41,10 @@ int checkWinner() {
         if(sum == 3) return 1;
         if(sum == -3) return -1;
     }
+    // check draw
     bool anyEmpty=false;
     for(int i=0;i<9;i++) if(board[i]==0) { anyEmpty=true; break; }
-    if(!anyEmpty) return 2; 
+    if(!anyEmpty) return 2; // draw
     return 0;
 }
 
@@ -55,6 +56,7 @@ void drawLine(float x1, float y1, float x2, float y2, float w=6.0f) {
     glEnd();
 }
 
+// draw X inside cell centered at (cx,cy) with half-size hs
 void drawX(float cx, float cy, float hs) {
     glLineWidth(8.0f);
     glBegin(GL_LINES);
@@ -65,6 +67,7 @@ void drawX(float cx, float cy, float hs) {
     glEnd();
 }
 
+// draw O inside cell centered at (cx,cy) with radius r
 void drawO(float cx, float cy, float r) {
     glLineWidth(8.0f);
     glBegin(GL_LINE_STRIP);
@@ -77,40 +80,46 @@ void drawO(float cx, float cy, float r) {
 }
 
 void renderBoard(int w, int h) {
-    
+    // set up orthographic coords from -1..1 both axes
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(-1,1,-1,1,-1,1);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+    // Clear background is done outside
 
+    // draw grid lines (two vertical, two horizontal)
     glColor3f(0.15f, 0.15f, 0.15f);
+    // vertical lines at x = -1/3, 1/3
     drawLine(-1.0f/3.0f, -1.0f, -1.0f/3.0f, 1.0f, 8.0f);
     drawLine( 1.0f/3.0f, -1.0f,  1.0f/3.0f, 1.0f, 8.0f);
-
+    // horizontal lines at y = -1/3, 1/3
     drawLine(-1.0f, -1.0f/3.0f, 1.0f, -1.0f/3.0f, 8.0f);
     drawLine(-1.0f,  1.0f/3.0f, 1.0f,  1.0f/3.0f, 8.0f);
 
+    // draw X and O
     for(int r=0;r<3;r++){
         for(int c=0;c<3;c++){
             int idx = r*3 + c;
             int val = board[idx];
+            // compute center coordinates
             float cellW = 2.0f/3.0f;
             float cx = -1.0f + cellW*(c+0.5f);
-            float cy =  1.0f - cellW*(r+0.5f); 
+            float cy =  1.0f - cellW*(r+0.5f); // note: screen Y downward -> invert
             if(val == 1) {
-                glColor3f(0.9f, 0.2f, 0.2f); 
+                glColor3f(0.9f, 0.2f, 0.2f); // X color
                 drawX(cx, cy, cellW*0.28f);
             } else if(val == -1) {
-                glColor3f(0.12f, 0.2f, 0.9f); 
+                glColor3f(0.12f, 0.2f, 0.9f); // O color
                 drawO(cx, cy, cellW*0.28f);
             }
         }
     }
 
-
+    // If game over, draw a translucent overlay and text-like indicator using colored rectangle lines
     if(gameOver) {
+        // darken screen
         glColor4f(0.0f,0.0f,0.0f,0.35f);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -120,7 +129,9 @@ void renderBoard(int w, int h) {
         glEnd();
         glDisable(GL_BLEND);
 
+        // draw winner line or message: for simplicity, draw the winning triple line if any
         if(winner == 1 || winner == -1) {
+            // Find the winning line again and draw a thicker colored line across the centers of the cells
             const int lines[8][3] = {
                 {0,1,2},{3,4,5},{6,7,8},
                 {0,3,6},{1,4,7},{2,5,8},
@@ -130,6 +141,8 @@ void renderBoard(int w, int h) {
                 int a=lines[i][0], b=lines[i][1], c=lines[i][2];
                 int sum = board[a]+board[b]+board[c];
                 if(sum == 3*winner){
+                    // compute center pos of cell a and c to draw a line across
+                    int ra = a/3, ca = a%3;
                     int rc = c/3, cc = c%3;
                     float cellW = 2.0f/3.0f;
                     float cxa = -1.0f + cellW*(ca+0.5f);
@@ -145,11 +158,12 @@ void renderBoard(int w, int h) {
     }
 }
 
+// convert window coords to board cell index, return -1 if out
 int windowCoordsToCell(double mx, double my, int w, int h) {
-
+    // normalize to -1..1 with origin bottom-left for OpenGL coordinate used above
     float nx = (float)(mx / w) * 2.0f - 1.0f;
     float ny = -((float)(my / h) * 2.0f - 1.0f); // invert y
-
+    // each cell occupies -1..1 divided in 3 parts (cell width = 2/3)
     float cellW = 2.0f/3.0f;
     int col = (int)floor((nx + 1.0f) / cellW);
     int row = (int)floor((1.0f - ny) / cellW); // careful with inversion
